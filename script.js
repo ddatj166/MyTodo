@@ -1,5 +1,4 @@
 const board = document.getElementById('board');
-const addListBtn = document.getElementById('addListBtn');
 let draggedCard = null;
 let dropIndicator = null;
 
@@ -373,5 +372,4 @@ board.addEventListener('dragend', () => {
   board.querySelectorAll('.cards').forEach((cards) => cards.classList.remove('drag-over'));
 });
 
-addListBtn.addEventListener('click', showAddListForm);
 renderBoard();
