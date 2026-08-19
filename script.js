@@ -7,24 +7,24 @@ function createDefaultLists() {
   return [
     {
       id: generateId(),
-      title: 'Cần làm',
+      title: 'To do',
       cards: [
-        { id: generateId(), text: 'Lập kế hoạch học tập' },
-        { id: generateId(), text: 'Thiết kế giao diện trang web' },
+        { id: generateId(), text: 'Plan the study schedule' },
+        { id: generateId(), text: 'Design the website interface' },
       ],
     },
     {
       id: generateId(),
-      title: 'Đang làm',
+      title: 'In progress',
       cards: [
-        { id: generateId(), text: 'Xây dựng layout Trello' },
+        { id: generateId(), text: 'Build the Trello layout' },
       ],
     },
     {
       id: generateId(),
-      title: 'Hoàn thành',
+      title: 'Done',
       cards: [
-        { id: generateId(), text: 'Khởi tạo project' },
+        { id: generateId(), text: 'Set up the project' },
       ],
     },
   ];
@@ -33,9 +33,27 @@ function createDefaultLists() {
 function loadLists() {
   try {
     const savedState = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (Array.isArray(savedState?.lists)) return savedState.lists;
+    if (Array.isArray(savedState?.lists)) {
+      return savedState.lists.map((list) => ({
+        ...list,
+        title: {
+          'Cần làm': 'To do',
+          'Đang làm': 'In progress',
+          'Hoàn thành': 'Done',
+        }[list.title] || list.title,
+        cards: list.cards.map((card) => ({
+          ...card,
+          text: {
+            'Lập kế hoạch học tập': 'Plan the study schedule',
+            'Thiết kế giao diện trang web': 'Design the website interface',
+            'Xây dựng layout Trello': 'Build the Trello layout',
+            'Khởi tạo project': 'Set up the project',
+          }[card.text] || card.text,
+        })),
+      }));
+    }
   } catch (error) {
-    console.warn('Không thể đọc dữ liệu từ localStorage.', error);
+    console.warn('Could not read data from localStorage.', error);
   }
 
   return createDefaultLists();
@@ -96,7 +114,7 @@ function createInlineForm({ placeholder, value = '', submitText, onSubmit, onCan
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.className = 'inline-cancel';
-  cancelBtn.textContent = 'Hủy';
+  cancelBtn.textContent = 'Cancel';
 
   actions.append(saveBtn, cancelBtn);
   form.append(input, actions);
@@ -126,7 +144,7 @@ function renderBoard() {
         <section class="list" data-list-id="${list.id}">
           <div class="list-header">
             <h3 class="list-title" data-list-id="${list.id}" contenteditable="true" spellcheck="false">${escapeHtml(list.title)}</h3>
-            <button class="remove-list" type="button" data-list-id="${list.id}" aria-label="Xóa list">×</button>
+            <button class="remove-list" type="button" data-list-id="${list.id}" aria-label="Remove list">×</button>
           </div>
 
           <div class="cards" data-list-id="${list.id}">
@@ -135,14 +153,14 @@ function renderBoard() {
                 (card) => `
                   <div class="card" draggable="true" data-card-id="${card.id}">
                     <span class="card-text" data-card-id="${card.id}">${escapeHtml(card.text)}</span>
-                    <button class="remove-card" type="button" data-card-id="${card.id}" aria-label="Xóa thẻ">×</button>
+                    <button class="remove-card" type="button" data-card-id="${card.id}" aria-label="Remove card">×</button>
                   </div>
                 `
               )
               .join('')}
           </div>
 
-          <button class="add-card-btn" type="button" data-list-id="${list.id}">+ Thêm thẻ</button>
+          <button class="add-card-btn" type="button" data-list-id="${list.id}">+ Add card</button>
         </section>
       `
     )
@@ -151,7 +169,7 @@ function renderBoard() {
   const addListButton = document.createElement('button');
   addListButton.type = 'button';
   addListButton.className = 'new-list';
-  addListButton.textContent = '+ Thêm danh sách';
+  addListButton.textContent = '+ Add list';
   board.appendChild(addListButton);
 }
 
@@ -160,8 +178,8 @@ function showAddListForm() {
   if (!addListButton) return;
 
   const form = createInlineForm({
-    placeholder: 'Tên danh sách',
-    submitText: 'Thêm',
+    placeholder: 'List name',
+    submitText: 'Add',
     onSubmit: (value) => {
       state.lists.push({
         id: generateId(),
@@ -187,8 +205,8 @@ function showAddCardForm(listId) {
   if (!addButton) return;
 
   const form = createInlineForm({
-    placeholder: 'Tên thẻ',
-    submitText: 'Thêm',
+    placeholder: 'Card name',
+    submitText: 'Add',
     onSubmit: (value) => {
       const targetList = findListById(listId);
       if (!targetList) return;
@@ -198,7 +216,9 @@ function showAddCardForm(listId) {
         text: value,
       });
 
+      persistState();
       renderBoard();
+      showAddCardForm(listId);
     },
     onCancel: () => {
       renderBoard();
