@@ -1,9 +1,10 @@
 const board = document.getElementById('board');
+const STORAGE_KEY = 'trello-fake-board';
 let draggedCard = null;
 let dropIndicator = null;
 
-const state = {
-  lists: [
+function createDefaultLists() {
+  return [
     {
       id: generateId(),
       title: 'Cần làm',
@@ -26,7 +27,26 @@ const state = {
         { id: generateId(), text: 'Khởi tạo project' },
       ],
     },
-  ],
+  ];
+}
+
+function loadLists() {
+  try {
+    const savedState = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (Array.isArray(savedState?.lists)) return savedState.lists;
+  } catch (error) {
+    console.warn('Không thể đọc dữ liệu từ localStorage.', error);
+  }
+
+  return createDefaultLists();
+}
+
+function persistState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+const state = {
+  lists: loadLists(),
 };
 
 function findListById(listId) {
@@ -99,6 +119,7 @@ function createInlineForm({ placeholder, value = '', submitText, onSubmit, onCan
 }
 
 function renderBoard() {
+  persistState();
   board.innerHTML = state.lists
     .map(
       (list) => `
@@ -196,6 +217,7 @@ function updateListTitle(listId, value) {
   if (!list) return;
 
   list.title = trimmedValue;
+  persistState();
 }
 
 function removeCard(cardId) {
